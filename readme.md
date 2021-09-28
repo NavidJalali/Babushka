@@ -1,5 +1,5 @@
 # 👵🏼 Babushka
-### 🥒 Homemade JSON picking.
+### 🥒 Homemade JSON pickling.
 
 Work in progress. Just for fun.
 
