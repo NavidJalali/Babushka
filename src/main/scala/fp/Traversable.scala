@@ -8,7 +8,14 @@ object Traversable {
   implicit val listTraversable: Traversable[List] = new Traversable[List] {
     override def traverse[G[_], A, B](fa: List[A])(f: A => G[B])(implicit applicativeG: Applicative[G]): G[List[B]] =
       fa.foldRight(applicativeG.pure(List.empty[B])) {
-        case (a, gbs) => applicativeG.map { case (b: B, bs: List[B]) => b :: bs }(applicativeG.product(f(a), gbs))
+        case (a, gbs) => applicativeG.map[(B, List[B]), List[B]] { case (b, bs) => b :: bs }(applicativeG.product(f(a), gbs))
+      }
+  }
+
+  implicit val vectorTraversable: Traversable[IndexedSeq] = new Traversable[IndexedSeq] {
+    override def traverse[G[_], A, B](fa: IndexedSeq[A])(f: A => G[B])(implicit applicativeG: Applicative[G]): G[IndexedSeq[B]] =
+      fa.foldRight(applicativeG.pure(IndexedSeq.empty[B])) {
+        case (a, gbs) => applicativeG.map[(B, IndexedSeq[B]), IndexedSeq[B]] { case (b, bs) => b +: bs }(applicativeG.product(f(a), gbs))
       }
   }
 }

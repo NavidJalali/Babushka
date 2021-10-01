@@ -23,4 +23,18 @@ object Syntax {
 
     def map[B](ff: A => B): F[B] = applicative.map(ff)(fa)
   }
+
+  implicit class AlternatieOps[F[_] : Alternative, A](private val fa: F[A]) {
+    private val alternative = implicitly[Alternative[F]]
+
+    def product[B](fb: F[B]): F[(A, B)] = alternative.product(fa, fb)
+
+    def ap[B](ff: F[A => B]): F[B] = alternative.ap(ff)(fa)
+
+    def map[B](ff: A => B): F[B] = alternative.map(ff)(fa)
+
+    def combineK(y: F[A]): F[A] = alternative.combineK(fa, y)
+
+    def <+>(y: F[A]): F[A] = alternative.combineK(fa, y)
+  }
 }
