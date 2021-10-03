@@ -9,7 +9,7 @@ object Parser {
   type Parsed[A] = Either[ParseError, (String, A)]
 
   object Parsed {
-    def fromOption[A](opt: Option[(String, A)], message: String): Parsed[A] =
+    def fromOption[A](opt: Option[(String, A)], message: => String): Parsed[A] =
       opt.fold[Parsed[A]](Left(ParseError(message)))(Right.apply)
   }
 
@@ -36,7 +36,7 @@ object Parser {
   def doubleFromString(double: String, rest: String): Parsed[JsonValue.JsonNumber] =
     Parsed.fromOption(
       double.toDoubleOption.map(JsonValue.JsonNumber).map((rest, _)),
-      message = s"$double is not a Double."
+      message = if (double.isEmpty) s"Parsed empty string as Double." else s"$double is not a Double."
     )
 
   val parseJsonNumber: Parser[JsonValue.JsonNumber] =
