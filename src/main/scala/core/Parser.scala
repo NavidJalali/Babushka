@@ -1,6 +1,6 @@
 package core
 
-import fp.Alternative.parserAlternative.<+>
+import fp.Alternative.parserAlternative
 import fp.Syntax.{AlternativeOps, TraversableApplicativeOps}
 
 object Parser {
@@ -53,9 +53,11 @@ object Parser {
           doubleFromString(digits, xs)
     }
 
+  implicit class JsonParserOps(private val self: Parser[JsonValue]) {
+    def <&>(other: Parser[JsonValue]): Parser[JsonValue] = parserAlternative.combineK(self, other)
+  }
+
   // Todo: ADD remaining JSON value parsers
   val parseJson: Parser[JsonValue] =
-    <+>[JsonValue](parseJsonNull,
-      <+>[JsonValue](parseJsonBool, parseJsonNumber)
-    )
+    parseJsonNull <&> parseJsonBool <&> parseJsonNumber
 }
