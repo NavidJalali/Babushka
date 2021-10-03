@@ -59,18 +59,3 @@ object Parser {
       <+>[JsonValue](parseJsonBool, parseJsonNumber)
     )
 }
-
-object Test {
-  def main(args: Array[String]): Unit = {
-    import Parser._
-
-
-    println(
-      parseJson(""),
-      parseJson("true"),
-      parseJson("123.3125asdasd"),
-      parseJson("nullq2e"),
-
-    )
-  }
-}
