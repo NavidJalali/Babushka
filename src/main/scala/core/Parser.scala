@@ -49,12 +49,14 @@ object Parser {
     parseString("true").map(_ => JsonValue.JsonBool(true)) combineK
       parseString("false").map(_ => JsonValue.JsonBool(false))
 
-  val parseJsonNumber: Parser[JsonValue.JsonNumber] =
-    ((parseInt <* parseChar('.')) product parseInt).map {
-      case (big, small) => s"$big.$small".toDoubleOption.map(JsonValue.JsonNumber)
-    }
+  val parseJsonNumber: Parser[JsonValue.JsonNumber] = {
+    parseInt
+      .zipLeft(parseChar('.'))
+      .product(parseInt)
+      .map { case (big, small) => s"$big.$small".toDoubleOption.map(JsonValue.JsonNumber) }
       .flattenOption
       .combineK(parseInt.map(int => JsonValue.JsonNumber(int.toDouble)))
+  }
 
   // Todo: ADD remaining JSON value parsers
   val parseJson: Parser[JsonValue] =
