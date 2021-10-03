@@ -8,13 +8,29 @@ object Parser {
 
   type Parsed[A] = Either[ParseError, (String, A)]
 
-  object Parsed {
-    def fromOption[A](opt: Option[(String, A)], message: => String): Parsed[A] =
-      opt.fold[Parsed[A]](Left(ParseError(message)))(Right.apply)
-  }
-
   type Parser[A] = String => Parsed[A]
 
+  implicit class JsonParserOps(private val self: Parser[JsonValue]) {
+    def <&>(other: Parser[JsonValue]): Parser[JsonValue] = parserAlternative.combineK(self, other)
+  }
+
+  implicit class OptionParserOps[A](private val self: Parser[Option[A]]) {
+    def flattenOption: Parser[A] =
+      input => self(input).flatMap {
+        case (str, Some(a)) => Right((str, a))
+        case (_, None) => Left(ParseError("Failed to lift optional to value."))
+      }
+  }
+
+  def spanParser(predicate: Char => Boolean): Parser[String] = input => Right(input.span(predicate).swap)
+
+  def nonEmpty(p: Parser[String]): Parser[String] = input => p(input).flatMap {
+    case tupled@(_, value) =>
+      if (value.isEmpty) Left(ParseError("Expected nonempty string but received empty."))
+      else Right(tupled)
+  }
+
+  val parseInt: Parser[Int] = nonEmpty(spanParser(_.isDigit)).map(_.toIntOption).flattenOption
 
   def parseChar(char: Char): Parser[Char] = {
     case "" => Left(ParseError("Unexpected end of input."))
@@ -33,29 +49,12 @@ object Parser {
     parseString("true").map(_ => JsonValue.JsonBool(true)) combineK
       parseString("false").map(_ => JsonValue.JsonBool(false))
 
-  def doubleFromString(double: String, rest: String): Parsed[JsonValue.JsonNumber] =
-    Parsed.fromOption(
-      double.toDoubleOption.map(JsonValue.JsonNumber).map((rest, _)),
-      message = if (double.isEmpty) s"Parsed empty string as Double." else s"$double is not a Double."
-    )
-
   val parseJsonNumber: Parser[JsonValue.JsonNumber] =
-    input => input.span(_.isDigit) match {
-      case (digits, "") => doubleFromString(digits, "")
-      case (digits, xs) =>
-        val head = xs.head
-        val tail = xs.tail
-        if (head == '.')
-          tail.span(_.isDigit) match {
-            case (small, rest) => doubleFromString(s"$digits.$small", rest)
-          }
-        else
-          doubleFromString(digits, xs)
+    ((parseInt <* parseChar('.')) product parseInt).map {
+      case (big, small) => s"$big.$small".toDoubleOption.map(JsonValue.JsonNumber)
     }
-
-  implicit class JsonParserOps(private val self: Parser[JsonValue]) {
-    def <&>(other: Parser[JsonValue]): Parser[JsonValue] = parserAlternative.combineK(self, other)
-  }
+      .flattenOption
+      .combineK(parseInt.map(int => JsonValue.JsonNumber(int.toDouble)))
 
   // Todo: ADD remaining JSON value parsers
   val parseJson: Parser[JsonValue] =
