@@ -8,6 +8,14 @@ trait Applicative[F[_]] extends Functor[F] {
   def ap[A, B](ff: F[A => B])(fa: F[A]): F[B]
 
   def pure[A](a: A): F[A]
+
+  def zipLeft[A, B](fa: F[A], fb: F[B]): F[A] = map[(A, B), A] { case (a, _) => a }(product(fa, fb))
+
+  def <*[A, B](fa: F[A], fb: F[B]): F[A] = zipLeft(fa, fb)
+
+  def zipRight[A, B](fa: F[A], fb: F[B]): F[B] = map[(A, B), B] { case (_, b) => b }(product(fa, fb))
+
+  def *>[A, B](fa: F[A], fb: F[B]): F[B] = zipRight(fa, fb)
 }
 
 object Applicative {
@@ -23,6 +31,7 @@ object Applicative {
   }
 
   implicit val parserApplicative: Applicative[Parser] = new Applicative[Parser] {
+
     import Functor.parserFunctor
 
     override def ap[A, B](ff: Parser[A => B])(fa: Parser[A]): Parser[B] =

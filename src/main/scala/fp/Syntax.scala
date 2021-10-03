@@ -22,9 +22,17 @@ object Syntax {
     def ap[B](ff: F[A => B]): F[B] = applicative.ap(ff)(fa)
 
     def map[B](ff: A => B): F[B] = applicative.map(ff)(fa)
+
+    def zipLeft[B](fb: F[B]): F[A] = applicative.zipLeft(fa, fb)
+
+    def <*[B](fb: F[B]): F[A] = applicative.zipLeft(fa, fb)
+
+    def zipRight[B](fb: F[B]): F[B] = applicative.zipRight(fa, fb)
+
+    def *>[B](fb: F[B]): F[B] = applicative.zipRight(fa, fb)
   }
 
-  implicit class AlternatieOps[F[_] : Alternative, A](private val fa: F[A]) {
+  implicit class AlternativeOps[F[_] : Alternative, A](private val fa: F[A]) {
     private val alternative = implicitly[Alternative[F]]
 
     def product[B](fb: F[B]): F[(A, B)] = alternative.product(fa, fb)
@@ -32,6 +40,14 @@ object Syntax {
     def ap[B](ff: F[A => B]): F[B] = alternative.ap(ff)(fa)
 
     def map[B](ff: A => B): F[B] = alternative.map(ff)(fa)
+
+    def zipLeft[B](fb: F[B]): F[A] = alternative.zipLeft(fa, fb)
+
+    def <*[B](fb: F[B]): F[A] = alternative.zipLeft(fa, fb)
+
+    def zipRight[B](fb: F[B]): F[B] = alternative.zipRight(fa, fb)
+
+    def *>[B](fb: F[B]): F[B] = alternative.zipRight(fa, fb)
 
     def combineK(y: F[A]): F[A] = alternative.combineK(fa, y)
 
