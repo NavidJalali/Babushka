@@ -49,16 +49,22 @@ object Parser {
     parseString("true").map(_ => JsonValue.JsonBool(true)) combineK
       parseString("false").map(_ => JsonValue.JsonBool(false))
 
-  val parseJsonNumber: Parser[JsonValue.JsonNumber] = {
+  val parseJsonNumber: Parser[JsonValue.JsonNumber] =
     parseInt
       .zipLeft(parseChar('.'))
       .product(parseInt)
       .map { case (big, small) => s"$big.$small".toDoubleOption.map(JsonValue.JsonNumber) }
       .flattenOption
       .combineK(parseInt.map(int => JsonValue.JsonNumber(int.toDouble)))
-  }
 
-  // Todo: ADD remaining JSON value parsers
+  // TODO: Add support for escaped characters
+  val parseJsonString: Parser[JsonValue.JsonString] =
+    parseChar('"')
+      .zipRight(spanParser(_ != '\"'))
+      .zipLeft(parseChar('"'))
+      .map(JsonValue.JsonString)
+
+  // Todo: Add remaining JSON value parsers
   val parseJson: Parser[JsonValue] =
-    parseJsonNull <&> parseJsonBool <&> parseJsonNumber
+    parseJsonNull <&> parseJsonBool <&> parseJsonNumber <&> parseJsonString
 }
